@@ -48,6 +48,30 @@ func main() {
 
     app := pocketbase.New()
     
+    app.OnRecordBeforeUpdateRequest("customers", " projects").Add(func(e *core.RecordUpdateEvent) error {
+
+        admin, _ := e.HttpContext.Get(apis.ContextAdminKey).(*models.Admin)
+        authRecord, _ := e.HttpContext.Get(apis.ContextAuthRecordKey).(*models.Record)
+
+        if authRecord != nil && admin == nil {
+            e.Record.Set("edittedBy", authRecord.Get("id"))
+        }
+
+        return nil
+    })
+
+    app.OnRecordBeforeCreateRequest("customers", " projects").Add(func(e *core.RecordCreateEvent) error {
+
+        admin, _ := e.HttpContext.Get(apis.ContextAdminKey).(*models.Admin)
+        authRecord, _ := e.HttpContext.Get(apis.ContextAuthRecordKey).(*models.Record)
+
+        if authRecord != nil && admin == nil {
+            e.Record.Set("createdBy", authRecord.Get("id"))
+        }
+
+        return nil
+    })
+
     app.OnRecordAfterCreateRequest("users").Add(func(e *core.RecordCreateEvent) error {
 
         record, err := app.Dao().FindRecordById("users", e.Record.Get("id").(string))
